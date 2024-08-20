@@ -268,10 +268,7 @@ char* strchr(const char* str, int chr) {
 char* strrchr(const char* str, int chr) {
 	char c = (char)chr;
 	int i = 0;
-	while(*str != '\0') { 
-		++str;
-		++i;
-	}
+	while(str[i] != '\0') ++i;
 	while(i >= 0) {
 		if (str[i] == c) return (char*)str + i;
 		--i;  
@@ -402,6 +399,5 @@ void* memccpy(void *restrict dest, const void *restrict src, int ch, size_t coun
 char* strerror(int errnum) {
 	// -> TODO: requires setlocale()
 }
-
 
 #endif
