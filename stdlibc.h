@@ -14,12 +14,80 @@
 
 // ====== __assert.h__ ====== //
 #ifdef NDEBUG
-#define assert(condition) ;
+#define assert(condition) ((void)0)
 #else
 // -> TODO: requires fwrite() and abort()
 #endif
 
 // ====== __math.h__ ====== //
+union {
+	unsigned int u;
+	float f;
+} __nan = { .u = 0x7FC00000 }, __inf = { .u = 0x7F800000 };
+#define NAN (__nan.f)
+#define INFINITY (__inf.f)
+// suboptimal -- 
+#define __nrml(arg) \
+sizeof(arg) == sizeof(float) ? __isnrmlf(arg) : \
+sizeof(arg) == sizeof(double) ? __isnrml(arg) : __isnrmll(arg)
+#define isnan(arg) (arg != arg)
+#define isfinite(arg) (!isnan(arg) && arg != INFINITY)
+#define isinf(arg) (!isnan(arg) && arg == INFINITY)
+#define isnormal(arg) (arg != 0 && !isnan(arg) && !isinf(arg) && __nrml(arg))
+#define signbit(arg) (arg < 0)
+#define isgreater(x, y) (x > y)
+#define isgreaterequal(x, y) (!(x < y))
+#define isless(x, y) (x < y)
+#define islessequal(x, y) (!(x > y))
+#define islessgreater(x, y) (x != y)
+#define isunordered(x, y) (isnan(x) || isnan(y)) 
+#define HUGE_VAL ((double)INFINITY)
+#define HUGE_VALF ((float)INFINITY)
+#define HUGE_VALL ((long double)INFINITY)
+#define FP_NORMAL 1
+#define FP_SUBNORMAL 2
+#define FP_ZERO 4
+#define FP_INFINITE 8
+#define FP_NAN 16
+#define MATH_ERRNO 1
+#define MATH_ERREXCEPT 2
+#define math_errhandling MATH_ERREXCEPT
+
+int __isnrmlf(float arg) {
+	unsigned int mts = 0;
+	__fpartsf(arg, NULL, NULL, &mts);
+	return mts & 0x00800000;
+}
+
+int __isnrml(double arg) {
+	unsigned long mts = 0;
+	__fparts(arg, NULL, NULL, &mts);
+	return mts & 0x0008000000000000; 
+}
+
+int __isnrmll(long double arg) {
+	// -> TODO: implement
+}
+
+void __fpartsf(float arg, unsigned int* sgn, unsigned int* exp, unsigned int* mts) {
+	unsigned int* ptr = (unsigned int*)&arg;
+	if (sgn) *sgn = *ptr >> 31;
+	if (exp) *exp = (*ptr & 0x7F800000) >> 23;
+	if (mts) *mts = (*ptr & 0x007FFFFF);
+}
+
+void __fparts(double arg, unsigned int* sgn, unsigned int* exp, unsigned long* mts) {
+	unsigned int* ptr = (unsigned int*)&arg;
+	if (sgn) *sgn = *ptr >> 63;
+	if (exp) *exp = (*ptr & 0x7FF0000000000000) >> 53;
+	if (mts) *mts = (*ptr & 0x000FFFFFFFFFFFFF);
+}
+
+int __fpartsl(float arg, unsigned int* sgn, unsigned int* exp1,
+			unsigned long* mts1, unsigned int* exp2, unsigned long* mts2) {
+	
+}
+
 float fabsf(float arg) {
 	if (arg >= 0) return arg;
 	return -arg;
@@ -41,7 +109,7 @@ float fmodf(float x, float y) {
 	if (!isfinite(x) || y == 0) {
 		// -> TODO: requires fenv.h 
 		fexcept |= FE_INVALID;
-		return NAN
+		return NAN;
 	}
 	return x % y;
 }
@@ -52,7 +120,7 @@ double fmod(double x, double y) {
 	if (!isfinite(x) || y == 0) {
 		// -> TODO: requires fenv.h 
 		fexcept |= FE_INVALID;
-		return NAN
+		return NAN;
 	}
 	return x % y;
 }
@@ -63,7 +131,7 @@ long double fmodl(long double x, long double y) {
 	if (!isfinite(x) || y == 0) {
 		// -> TODO: requires fenv.h 
 		fexcept |= FE_INVALID;
-		return NAN
+		return NAN;
 	}
 	return x % y;
 }
@@ -74,7 +142,7 @@ float remainderf(float x, float y) {
 	if (!isfinite(x) || y == 0) {
 		// -> TODO: requires fenv.h 
 		fexcept |= FE_INVALID;
-		return NAN
+		return NAN;
 	}
 	return x - (x/y) * y;
 }
@@ -85,7 +153,7 @@ double remainder(double x, double y) {
 	if (!isfinite(x) || y == 0) {
 		// -> TODO: requires fenv.h 
 		fexcept |= FE_INVALID;
-		return NAN
+		return NAN;
 	}
 	return x - (x/y) * y;
 }
@@ -96,7 +164,7 @@ long double remainderl(long double x, long double y) {
 	if (!isfinite(x) || y == 0) {
 		// -> TODO: requires fenv.h 
 		fexcept |= FE_INVALID;
-		return NAN
+		return NAN;
 	}
 	return x - (x/y) * y;
 }
@@ -107,12 +175,12 @@ float remquof(float x, float y, int *quo) {
 	if (!isfinite(x) || y == 0) {
 		// -> TODO: requires fenv.h 
 		fexcept |= FE_INVALID;
-		return NAN
+		return NAN;
 	}
 	float divd = (x/y);
 	*quo = 0; 
 	*quo |= (divd & (1 << sizeof(divd) * 8 - 1));
-	*quo |= (divd & ((1 << 3) - 1));
+	*quo |= (divd & (float)((1 << 3) - 1)) << sizeof(divd) - sizeof(qou);
 	return x - divd * y;
 }
 
@@ -122,7 +190,7 @@ double remquo(double x, double y, int *quo) {
 	if (!isfinite(x) || y == 0) {
 		// -> TODO: fexcept and FE_INVALID requires fenv.h 
 		fexcept |= FE_INVALID;
-		return NAN
+		return NAN;
 	}
 	double divd = (x/y);
 	*quo = 0; 
@@ -137,16 +205,29 @@ long double remquol(long double x, long double y, int *quo) {
 	if (!isfinite(x) || y == 0) {
 		// -> TODO: requires fenv.h 
 		fexcept |= FE_INVALID;
-		return NAN
+		return NAN;
 	}
 	long double divd = (x/y);
 	*quo = 0; 
 	*quo |= (divd & (1 << sizeof(divd) * 8 - 1));
-	*quo |= (divd & (double)((1 << 3) - 1)) << sizeof(divd) - sizeof(qou);
+	*quo |= (divd & (long double)((1 << 3) - 1)) << sizeof(divd) - sizeof(qou);
 	return x - divd * y;
 }
 
-// -> TODO: fma()
+float fmaf(float x, float y, float z) {
+	// this is suboptimal
+	// there's a dedicated cpu instruction for this function
+	// but i won't use it because
+	return (x * y + z);
+}
+
+double fma(double x, double y, double z) {
+	return (x * y + z);
+}
+
+long double fmal(long double x, long double y, long double z) {
+	return (x * y + z);
+}
 
 float fmaxf(float x, float y) {
 	return (x > y) ? x : y;
