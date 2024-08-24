@@ -6,9 +6,12 @@ this library is highly unportable, as it only adheres to these specifications
 - big-endian byte order
 - IEEE 754 floating-point representation
 
-## supported
+## currently supports
 - string.h
 - ctype.h
+- wctype.h
+- fenv.h
+- stdnoreturn.h
 
 I intend to support all the available standard libraries as if C20.
 
