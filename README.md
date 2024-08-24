@@ -3,13 +3,14 @@ my implementation of the C20 standard library
 
 this library is highly unportable, as it only adheres to these specifications
 - The NT kernel syscalls
-- big-endian byte order
+- little-endian byte order
 - IEEE 754 floating-point representation
 
 ## currently supports
 - string.h
 - ctype.h
 - wctype.h
+- wchar.h 
 - fenv.h
 - stdnoreturn.h
 

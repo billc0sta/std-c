@@ -105,15 +105,22 @@ int feupdateenv(const fenv_t* envp) {
 
 void __fpartsf(float arg, unsigned int* sgn, unsigned int* exp, unsigned int* mts) {
 	unsigned int* ptr = (unsigned int*)&arg;
-	if (sgn) *sgn = *ptr >> 31;
-	if (exp) *exp = (*ptr & 0x7F800000) >> 23;
-	if (mts) *mts = (*ptr & 0x007FFFFF);
+	if (sgn) *sgn = (*ptr >> 31) & 0x1;
+	if (exp) *exp = (*ptr >> 24) & 0x7F8;
+	if (mts) *mts = *ptr & 0x7FFFFF;
+}
+
+void __fparts(double arg, unsigned int* sgn, unsigned int* exp, unsigned long* mts) {
+	unsigned int* ptr = (unsigned int*)&arg; 
+	if (sgn) *sgn = (*ptr >> 62) & 0x1;
+	if (exp) *exp = (*ptr >> 53) & 0x7FF;
+	if (mts) *mts = (*ptr & 0xFFFFFFFFFFFFF);
 }
 
 int __isnrmlf(float arg) {
 	unsigned int mts = 0;
 	__fpartsf(arg, NULL, NULL, &mts);
-	return (mts & 0x00400000) != 0;
+	return (mts & 0x400000) != 0;
 }
 
 union {
@@ -311,6 +318,30 @@ double fdim(double x, double y) {
 
 long double fdimf(long double x, long double y) {
 	return fmaxl(0.f, x - y);
+}
+
+float truncf(float arg) {
+	unsigned int exp = 0;
+	__fpartsf(arg, NULL, &exp, NULL);
+	if (exp > 150) return arg;
+	if (exp < 128) return 0; 
+	short rexp = -126 + exp - 1;
+	union { unsigned int u; float f; } prt = {.u = arg};
+	prt.u >>= 24 - rexp;
+	prt.u <<= 24 - rexp;
+	return prt.f; 
+}
+
+double trunc(double arg) {
+	unsigned int exp = 0;
+	__fparts(arg, NULL, &exp, NULL);
+	if (exp > 564) return arg;
+	if (exp < 512) return 0; 
+	int rexp = -510 + exp - 1;
+	union { unsigned long u; double f; } prt = {.u = arg};
+	prt.u >>= 53 - rexp;
+	prt.u <<= 53 - rexp;
+	return prt.f; 
 }
 
 // -> TODO: Complete math.h 
@@ -530,10 +561,83 @@ wctrans_t wctrans(const char* str) {
 
 // ====== __stdlib.h__ ====== //
 
-// it is what it is
 float atof(const char* str) {
+	return (float)strtod(str, NULL);
+
+}
+
+int atoi(const char* str) {
+	return (int)atol(str);
+}
+
+long atol(const char* str) {
+	return (long)atoll(str); 
+}
+
+long long atoll(const char* str) {
+	return strtoll(str, NULL, 0);
+}
+
+long strtol(const char* str, char** str_end, int base) {
+	return (long)strtold(str, str_end, base);
+}
+
+long long strtoll(const char* str, char** str_end, int base) {
+	if (base != 0 && base < 2 || base > 36) 
+		return 0;
+	long long ret = 0;
+	int sign = 0;
+	char c = 0;
+	while(isspace(*str)) ++str;
+	if (*str == '-') {
+		sign = 1;
+		++str;
+	}
+	if (*str == '0') {
+		if (base != 0) 
+			return 0;
+		c = *(++str);
+		if (((c == 'X' || c == 'x') && base != 16) || base != 8)
+			return 0;
+		if (c == 'X' || c == 'x') 
+			++str;
+	}
+	if (*str == 0)
+	while ((c = *str) != '\0') {
+		if (isdigit(c))
+			c -= '0';
+		else if (isalpha(c))
+			c -= isupper(c) ? 'A' - 10 : 'a' - 10;
+		added = ret * base + c - ret;
+		if (sign && LLONG_MIN + ret <= added)
+			return LLONG_MIN;
+		else if (LLONG_MAX - ret <= added)
+			return LLONG_MAX;
+		ret += added;
+	}
+	if (str_end) str_end = str;
+	return ret * -sign;
+}
+
+unsigned long strtoul(const char* str, char** str_end, int base) {
+	return (unsigned long)strtol(str, str_end, base);
+}
+
+unsigned long long strtoull(const char* str, char** str_end, int base) {
+	return (unsigned long long)strtoll(str, str_end, base);
+}
+
+float strtof(const char* str, char** str_end) {
+	return (float)strtod(str, str_end);  
+} 
+
+double strtod(const char* str, char** str_end) {
+	return (double)strtold(str, str_end);  
+}
+
+long double strtold(const char* str, char** str_end) {
 	int sign = 0, hex = 0, dot = 0;
-	float ret = 0.f, dec = 0.1f; 
+	long double ret = 0, dec = 0.1f; 
 	char c = 0;
 	while(isspace(*str)) ++str;
 	if ((c = *str) == '-') {
@@ -589,143 +693,9 @@ float atof(const char* str) {
 				ret += c;
 			}
 		}
-	} 
-	return ret * -sign;
-}
-
-int atoi(const char* str) {
-	int ret = 0;
-	while (isspace(*str)) ++str; 
-	if (*str == '-') {
-		sign = 1;
-		++str;
-	} 
-	while (*str != '\0') {
-		if (!isdigit(*str)) return 0;
-		ret *= 10;
-		ret += *str - '0';
-		++str;
-	}
-	return ret * -sign;
-}
-
-long atol(const char* str) {
-	long int ret = 0;
-	while (isspace(*str)) ++str;
-	if (*str == '-') {
-		sign = 1;
-		++str;
-	} 
-	while (*str != '\0') {
-		if (!isdigit(*str)) return 0;
-		ret *= 10;
-		ret += *str - '0';
-		++str;
-	}
-	return ret * -sign;
-}
-
-long long atoll(const char* str) {
-	long long ret = 0;
-	int sign = 0;
-	while (isspace(*str)) ++str;
-	if (*str == '-') {
-		sign = 1;
-		++str;
-	} 
-	while (*str != '\0') {
-		if (!isdigit(*str)) return 0;
-		ret *= 10;
-		ret += *str - '0';
-		++str;
-	}
-	return ret * -sign;
-}
-
-unsigned long strtol(const char* str, char** str_end, int base) {
-	if (base != 0 && base < 2 || base > 36) 
-		return 0;
-	unsigned long ret = 0;
-	int sign = 0;
-	char c = 0;
-	while(isspace(*str)) ++str;
-	if (*str == '-') {
-		sign = 1;
-		++str;
-	}
-	if (*str == '0') {
-		if (base != 0)
-			return 0;
-		c = *(++str);
-		if (((c == 'X' || c == 'x') && base != 16) || base != 8)
-			return 0;
-		if (c == 'X' || c == 'x') 
-			++str;
-	}
-	while ((c = *str) != '\0') {
-		if (isdigit(c))
-			c -= '0';
-		else if (isalpha(c))
-			c -= isupper(c) ? 'A' - 10 : 'a' - 10;
-		added = ret * base + c - ret;
-		// -> TODO: LONG_MIN and LONG_MAX requires limits.h
-		if (sign && LONG_MIN + ret <= added)
-			return LONG_MIN;
-		if (LONG_MAX - ret <= added)
-			return LONG_MAX;
-		ret += added;
-	}
-	if (str_end) str_end = str;
-	return ret * -sign;  
-}
-
-unsigned long long strtoll(const char* str, char** str_end, int base) {
-	if (base != 0 && base < 2 || base > 36) 
-		return 0;
-	unsigned long long ret = 0;
-	int sign = 0;
-	char c = 0;
-	while(isspace(*str)) ++str;
-	if (*str == '-') {
-		sign = 1;
-		++str;
-	}
-	if (*str == '0') {
-		if (base != 0) 
-			return 0;
-		c = *(++str);
-		if (((c == 'X' || c == 'x') && base != 16) || base != 8)
-			return 0;
-		if (c == 'X' || c == 'x') 
-			++str;
-	}
-	if (*str == 0)
-	while ((c = *str) != '\0') {
-		if (isdigit(c))
-			c -= '0';
-		else if (isalpha(c))
-			c -= isupper(c) ? 'A' - 10 : 'a' - 10;
-		added = ret * base + c - ret;
-		if (sign && LLONG_MIN + ret <= added)
-			return LLONG_MIN;
-		else if (LLONG_MAX - ret <= added)
-			return LLONG_MAX;
-		ret += added;
 	}
 	if (str_end) str_end = str;
 	return ret * -sign;
-}
-
-double strtod(const char* str, char** str_end) {
-	double ret = atof(str);
-	if (str_end) str_end = str;
-	return ret; 
-}
-
-double strtold(const char* str, char** str_end) {
-	long double ret = atof(str);
-	if (str_end) str_end = str;
-	return ret; 
 }
 
 // ====== __string.h__ ====== //
@@ -955,6 +925,324 @@ void* memccpy(void *restrict dest, const void *restrict src, int ch, size_t coun
 
 char* strerror(int errnum) {
 	// -> TODO: requires setlocale()
+}
+
+// ====== __wchar.h__ ====== //
+typedef int wchar_t; 
+typedef long int wint_t;
+typedef int wctrans_t;
+typedef int wctype_t;
+#define WEOF -1;
+#define WCHAR_MIN INT_MIN;
+#define WCHAR_MAX INT_MAX;  
+
+long wcstol(const wchar_t* str, wchar_t** str_end, int base) {
+	return (long)wcstoll(str, str_end, base);
+}
+
+long long wcstoll(const wchar_t* restrict str, wchar_t** restrict str_end, int base) {
+	if (base != 0 && base < 2 || base > 36) 
+		return 0;
+	long long ret = 0;
+	int sign = 0;
+	wchar_t c = 0;
+	while(iswspace(*str)) ++str;
+	if (*str == '-') {
+		sign = 1;
+		++str;
+	}
+	if (*str == '0') {
+		if (base != 0) 
+			return 0;
+		c = *(++str);
+		if (((c == 'X' || c == 'x') && base != 16) || base != 8)
+			return 0;
+		if (c == 'X' || c == 'x') 
+			++str;
+	}
+	if (*str == 0)
+	while ((c = *str) != '\0') {
+		if (iswdigit(c))
+			c -= '0';
+		else if (iswalpha(c))
+			c -= iswupper(c) ? 'A' - 10 : 'a' - 10;
+		added = ret * base + c - ret;
+		if (sign && LLONG_MIN + ret <= added)
+			return LLONG_MIN;
+		else if (LLONG_MAX - ret <= added)
+			return LLONG_MAX;
+		ret += added;
+	}
+	if (str_end) str_end = str;
+	return ret * -sign;
+}
+
+unsigned long wcstoul(const wchar_t* str, wchar_t** str_end, int base) {
+	return (unsigned long)wcstol(str, str_end, base);
+}
+
+unsigned long long wcstoull(const wchar_t* str, wchar_t** str_end, int base) {
+	return (unsigned long long)wcstoll(str, str_end, base);
+}
+
+float wcstof(const wchar_t* str, wchar_t** str_end) {
+	return (float)wcstod(str, str_end);  
+} 
+
+double wcstod(const wchar_t* str, wchar_t** str_end) {
+	return (double)wcstold(str, str_end);  
+}
+
+long double wcstold(const wchar_t* str, wchar_t** str_end) {
+	int sign = 0, hex = 0, dot = 0;
+	long double ret = 0, dec = 0.1f; 
+	wchar_t c = 0;
+	while(isspace(*str)) ++str;
+	if ((c = *str) == '-') {
+		sign = 1;
+		++str;
+	}
+
+	wchar_t expression[20] = { '\0' };
+	const wchar_t* bg = str;
+	while ((c = *str) != '\0' && str++ - bg < 20) 
+		expression[str-bg] = towlower(c);
+	expression[min(str-bg, 19)] = '\0';
+	if (wcscmp(expression, "INF") || wcscmp(expression, "INFINITY"))
+		return INF * -sign;
+	else if (wcscmp(expression, "NAN"))
+		return NAN * -sign;
+	str = bg; 
+	if ((c = *str++) == '0') {
+		c = *str++;
+		if (c == 'x' || c == 'X')
+			hex = 1;
+		else return 0.0;
+	}
+	while((c = *str++) != '\0') {
+		if (c == 'E' || c == 'e') {
+			c = *(++str);
+			int esign = 0;
+			if (c == '-') esign = 1;
+			int power = 0;
+			while((c = *str++) != '\0') {
+				if (!iswdigit(c)) return 0.f;
+				power *= 10; 
+				power += c - '0';
+			}
+			power = pow(10, (esign) ? -power : power);
+			ret *= power;
+			break; 
+		}
+		else if (iswdigit(c)) c -= '0';
+		else if (iswalpha(c)) c -= (iswupper(c)) ? 'A' - 10 : 'a' - 10;
+		else if (c == '.') {
+			if (dot) return 0.f; 
+			dot = 1;
+		}
+		else return 0.f;
+		if (c >= 0 && c <= 15) {
+			if (dot) {
+				ret += c * dec;
+				dec *= 0.1;
+			}
+			else { 
+				ret *= 10;
+				ret += c;
+			}
+		}
+	}
+	if (str_end) str_end = str;
+	return ret * -sign;
+}
+
+wchar_t* wcscpy(wchar_t* dest, const wchar_t* src) {
+	wchar_t* bg = dest;
+	while(*src != '\0')
+		*dest++ = *src++; 
+	*dest = '\0';
+	return bg; 
+}
+
+wchar_t* wcsncpy(wchar_t* dest, const wchar_t* src, size_t count) {
+	wchar_t* bg = dest;
+	while(count-- > 0) {
+		*dest++ = *src; 
+		if (*src != '\0') ++src;
+	}
+	return bg;
+}
+
+wchar_t* wcscat(wchar_t* dest, const wchar_t src) {
+	wchar_t* bg = dest;
+	while(*dest != '\0') ++dest;
+	while(*src != '\0') *dest++ = *src++;
+	*dest = '\0'; 
+	return bg; 
+}
+
+wchar_t* wcsncat(wchar_t* dest, const wchar_t* src, size_t count) {
+	wchar_t* bg = dest;
+	while(*dest != '\0') ++dest;
+	while(count-- > 0 && *src != '\0')
+		*dest++ = *src++; 
+	*dest = '\0'; 
+	return bg;
+}
+
+size_t wscxfrm(char *restrict dest, const char *restrict src, size_t count) {
+	// -> TODO: requires setlocale() 
+}
+
+size_t wsclen(const wchar_t* str) {
+	size_t c;
+	while(*str++ != '\0') ++c;
+	return c; 
+}
+
+int wsccmp(const wchar_t* lhs, const wchar_t* rhs) {
+	while(*lhs != '\0' && *rhs != '\0') {
+		wchar_t lc = *lhs++;
+		wchar_t rc = *rhs++;
+		if (lc < rc) return -1;
+		if (lc > rc) return  1;
+	}
+	if (*rhs != '\0') return -1;
+	if (*lhs != '\0') return  1;
+	return 0;
+}
+
+int wscncmp(const wchar_t* lhs, const wchar_t* rhs, size_t count) {
+	while(count-- > 0 && *lhs != '\0' && *rhs != '\0') {
+		wchar_t lc = *lhs++;
+		wchar_t rc = *rhs++;
+		if (lc < rc) return -1;
+		if (lc > rc) return  1;
+	}
+	if (count > 0) {
+		if (*rhs != '\0') return -1;
+		if (*lhs != '\0') return  1;
+	} 
+	return 0;
+}
+
+int wsccoll(const wchar_t* lhs, const wchar_t* rhs) {
+	// -> TODO: requires setlocale()
+}
+
+wchar_t* wscchr(const wchar_t* str, wchar_t chr) {
+	while(*str != '\0') {
+		if (chr == *str) return (wchar_t*)str;
+		++str; 
+	}
+	if (c == '\0') return (wchar_t*)str;
+	return NULL;
+}
+
+wchar_t* wscrchr(const wchar_t* str, wchar_t chr) {
+	int i = 0;
+	while(str[i] != '\0') ++i;
+	while(i >= 0) {
+		if (str[i] == chr) return (wchar_t *)str + i;
+		--i;  
+	}
+	return NULL; 
+}
+
+size_t wscspn(const wchar_t* dest, const wchar_t* src) {
+	size_t c = 0;
+	while (wcschr(src, dest[c]) != NULL) ++c;
+	return c; 
+}
+
+
+size_t wsccspn(const wchar_t* dest, const wchar_t* src) {
+	size_t c = 0;
+	while (wcschr(src, dest[c]) == NULL) ++c;
+	return c; 
+}
+
+char* wcspbrk(const wchar_t* dest, const wchar_t* src) {
+	const wchar_t* srcbg = src;
+	while(*dest != '\0') {
+		while(*src != '\0') {
+			if (*src == *dest) return (wchar_t*)dest;
+			++src;
+		}
+		src = srcbg; 
+		++dest;
+	}
+	return NULL;
+}
+
+wchar_t* wcsstr(const wchar_t* str, const wchar_t* substr) {
+	size_t sslen = wcslen(substr);
+	size_t matched = 0;
+	while (*str != '\0' && matched != sslen) {
+		if (*str == substr[matched]) ++matched;
+		else matched = 0;
+		++str; 
+	}
+	if (matched == sslen) return (wchar_t*)(str - sslen); 
+	return NULL;
+}
+
+static wchar_t* wstrtok_prev = NULL;
+wchar_t* wcstok(wchar_t *restrict str, const wchar_t *restrict delim) {
+	if (str == NULL) str = wstrtok_prev;
+	while (*str != '\0') {
+		wchar_t* tok = wcschr(delim, *str);
+		if (tok == NULL) {
+			static wchar_t* strtok_prev = NULL;
+			tok = str;
+			while (delim != '\0') {
+				wchar_t* end = wcschr(tok, *delim);
+				if (end != NULL) {
+					*end = '\0';
+					wstrtok_prev = end + 1;
+				}
+				++delim; 
+			}
+			return tok;
+		}
+		++str;
+	}
+	return NULL;
+}
+
+wchar_t* wmemchr(const wchar_t* ptr, wchar_t ch, size_t count) {
+	while(count-- > 0) {
+		if (*ptr == ch) return search;
+		++ptr;
+	}
+	return NULL;
+}
+
+int wmemcmp(const wchar_t* lhs, const wchar_t* rhs, size_t count) {
+	for (int i = 0; i < count; ++i) {
+		if (lhs[i] < rhs[i]) return -1;
+		if (lhs[i] > rhs[i]) return  1;
+	}
+	return 0; 
+}
+
+wchar_t* wmemset(const wchar_t* dest, wchar_t ch, size_t count) {
+	while(count-- > 0) {
+		*dest++ = ch;
+	}
+	return dest; 
+}
+
+wchar_t* wmemcpy(wchar_t* dest, const wchar_t* src, size_t count) {
+	while(count-- > 0) 
+		*dest++ = *src++;
+	return dest; 
+}
+
+wchar_t* wmemmove(wchar_t* dest, const wchar_t* src, size_t count) {
+	while(count-- > 0) 
+		*dptr++ = *sptr++;
+	return dest; 
 }
 
 #endif
