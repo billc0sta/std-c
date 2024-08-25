@@ -1,4 +1,4 @@
-#include <../include/math.h>
+#include "../include/math.h"
 
 void __fpartsf(float arg, unsigned int* sgn, unsigned int* exp, unsigned int* mts) {
 	unsigned int* ptr = (unsigned int*)&arg;
