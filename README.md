@@ -7,12 +7,17 @@ this library is highly unportable, as it only adheres to these specifications
 - IEEE 754 floating-point representation
 
 ## currently supports
-- string.h
+- assert.h
+- complex.h
 - ctype.h
-- wctype.h
-- wchar.h 
 - fenv.h
+- math.h
+- stddef.h
+- stdlib.h
 - stdnoreturn.h
+- string.h
+- wchar.h
+- wctype.h
 
 I intend to support all the available standard libraries as if C20.
 
