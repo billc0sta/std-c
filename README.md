@@ -14,6 +14,7 @@ this library is highly unportable, as it only adheres to these specifications
 - math.h
 - stddef.h
 - stdlib.h
+- stdint.h 
 - stdnoreturn.h
 - string.h
 - wchar.h
