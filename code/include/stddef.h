@@ -1,10 +1,25 @@
 #ifndef _STDLIBC_STDDEF_H_
 #define _STDLIBC_STDDEF_H_
 
-// commented to disable conflicting types error
+#if __cplusplus >= 201103L
+#define NULL nullptr
+#elif defined(__cplusplus)
+#define NULL 0L
+#else
+#define NULL ((void*)0)
+#endif
 
-// #define NULL 0
-// typedef unsigned long size_t;
-// typedef signed long ptrdiff_t; // typedef unsigned long max_align_t;
+
+#ifdef __GNUC__
+
+typedef __SIZE_TYPE__ size_t;
+typedef __PTRDIFF_TYPE__ ptrdiff_t;
+
+#else
+
+typedef unsigned long size_t;
+typedef unsigned long ptrdiff_t;
 
 #endif
+
+#endif 

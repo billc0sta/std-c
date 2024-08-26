@@ -16,8 +16,8 @@
 typedef int fexcept_t;
 typedef struct {
 	fexcept_t __exceptions;
-	unsigned int __rounding;
-	int __hold
+	int __rounding;
+	int __hold;
 } fenv_t;
 
 extern fenv_t __pubfenv;

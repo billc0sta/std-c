@@ -1,21 +1,24 @@
 #include "../include/math.h"
+#include "../include/fenv.h"
+#include "../include/stdint.h"
+#include "../include/stddef.h"
 
-void __fpartsf(float arg, unsigned int* sgn, unsigned int* exp, unsigned int* mts) {
-	unsigned int* ptr = (unsigned int*)&arg;
-	if (sgn) *sgn = (*ptr >> 31) & 0x1;
-	if (exp) *exp = (*ptr >> 24) & 0x7F8;
-	if (mts) *mts = *ptr & 0x7FFFFF;
+void __fpartsf(float arg, int* sgn, int* exp, int* mts) {
+	union {double f; long long i;} u = {arg};
+	if (sgn) *sgn = (u.i >> 31) & 0x1;
+	if (exp) *exp = (u.i >> 24) & 0x7F8;
+	if (mts) *mts = u.i & 0x7FFFFF;
 }
 
-void __fparts(double arg, unsigned int* sgn, unsigned int* exp, unsigned long* mts) {
-	unsigned int* ptr = (unsigned int*)&arg; 
-	if (sgn) *sgn = (*ptr >> 62) & 0x1;
-	if (exp) *exp = (*ptr >> 53) & 0x7FF;
-	if (mts) *mts = (*ptr & 0xFFFFFFFFFFFFF);
+void __fparts(double arg, int* sgn, int* exp, long* mts) {
+	union {double f; long long i;} u = {arg};
+	if (sgn) *sgn = (unsigned int)(u.i >> 62 & 0x1);
+	if (exp) *exp = (unsigned int)(u.i >> 52 & 0x7FF);
+	if (mts) *mts = (unsigned long)(u.i & 0xFFFFFFFFFFFFF);
 }
 
 int __isnrmlf(float arg) {
-	unsigned int mts = 0;
+	int mts = 0;
 	__fpartsf(arg, NULL, NULL, &mts);
 	return (mts & 0x400000) != 0;
 }
@@ -42,7 +45,8 @@ float fmodf(float x, float y) {
 		feraiseexcept(FE_INVALID);
 		return NAN;
 	}
-	return x % y;
+	// -> TODO: fix
+	// return x % y;
 }
 
 double fmod(double x, double y) {
@@ -52,7 +56,8 @@ double fmod(double x, double y) {
 		feraiseexcept(FE_INVALID);
 		return NAN;
 	}
-	return x % y;
+	// -> TODO: fix
+	// return x % y;
 }
 
 long double fmodl(long double x, long double y) {
@@ -62,7 +67,8 @@ long double fmodl(long double x, long double y) {
 		feraiseexcept(FE_INVALID);
 		return NAN;
 	}
-	return x % y;
+	// -> TODO: fix
+	// return x % y;
 }
 
 float remainderf(float x, float y) {
@@ -103,9 +109,10 @@ float remquof(float x, float y, int *quo) {
 		return NAN;
 	}
 	float divd = (x/y);
-	*quo = 0; 
-	*quo |= (divd & (1 << sizeof(divd) * 8 - 1));
-	*quo |= (divd & (float)((1 << 3) - 1)) << sizeof(divd) - sizeof(qou);
+	// -> TODO: FIX
+	// *quo = 0;
+	// *quo |= ((*(int*)&divd) & (1LL << sizeof(divd) * 8 - 1));
+	// *quo |= ((*(int*)&divd) & ((1 << 3) - 1)) << sizeof(divd) - sizeof(quo);
 	return x - divd * y;
 }
 
@@ -117,9 +124,10 @@ double remquo(double x, double y, int *quo) {
 		return NAN;
 	}
 	double divd = (x/y);
-	*quo = 0; 
-	*quo |= (divd & (1 << sizeof(divd) * 8 - 1));
-	*quo |= (divd & (double)((1 << 3) - 1)) << sizeof(divd) - sizeof(qou);
+	// -> TODO: FIX
+	// *quo = 0;
+	// *quo |= ((*(int*)&divd) & (1LL << sizeof(divd) * 8 - 1));
+	// *quo |= ((*(int*)&divd) & ((1 << 3) - 1)) << sizeof(divd) - sizeof(quo);
 	return x - divd * y;
 }
 
@@ -131,9 +139,10 @@ long double remquol(long double x, long double y, int *quo) {
 		return NAN;
 	}
 	long double divd = (x/y);
-	*quo = 0; 
-	*quo |= (divd & (1 << sizeof(divd) * 8 - 1));
-	*quo |= (divd & (long double)((1 << 3) - 1)) << sizeof(divd) - sizeof(qou);
+	// -> TODO: FIX
+	// *quo = 0;
+	// *quo |= ((*(int*)&divd) & (1LL << sizeof(divd) * 8 - 1));
+	// *quo |= ((*(int*)&divd) & ((1 << 3) - 1)) << sizeof(divd) - sizeof(quo);
 	return x - divd * y;
 }
 
@@ -184,12 +193,12 @@ double fdim(double x, double y) {
 	return fmax(0.f, x - y);
 }
 
-long double fdimf(long double x, long double y) {
+long double fdiml(long double x, long double y) {
 	return fmaxl(0.f, x - y);
 }
 
 float truncf(float arg) {
-	unsigned int exp = 0;
+	int exp = 0;
 	__fpartsf(arg, NULL, &exp, NULL);
 	if (exp > 150) return arg;
 	if (exp < 128) return 0; 
@@ -201,7 +210,7 @@ float truncf(float arg) {
 }
 
 double trunc(double arg) {
-	unsigned int exp = 0;
+	int exp = 0;
 	__fparts(arg, NULL, &exp, NULL);
 	if (exp > 564) return arg;
 	if (exp < 512) return 0; 

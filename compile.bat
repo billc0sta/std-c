@@ -1,0 +1,1 @@
+gcc -o stdlib.exe code/main.c code/src/math.c && stdlib.exe
