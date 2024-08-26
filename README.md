@@ -6,6 +6,10 @@ this library is highly unportable, as it only adheres to these specifications
 - little-endian byte order
 - IEEE 754 floating-point representation
 
+this library supports the following compilers
+- MSVC Compiler
+- GCC/G++ Compiler
+
 ## currently supports
 - assert.h
 - complex.h
