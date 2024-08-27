@@ -3,10 +3,11 @@
 
 int __isnrmlf(float arg);
 
-union {
+union __fprt {
 	unsigned int u;
 	float f;
-} __nan = { .u = 0x7FC00000 }, __inf = { .u = 0x7F800000 };
+}; extern union __fprt __nan, __inf;
+
 #define NAN (__nan.f)
 #define INFINITY (__inf.f)
 #define isnan(arg) (arg != arg)
@@ -58,5 +59,6 @@ double fdim(double x, double y);
 long double fdiml(long double x, long double y);
 float truncf(float arg);
 double trunc(double arg);
+double trunl(double arg);
 
 #endif

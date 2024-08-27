@@ -1,77 +1,61 @@
 #ifndef _STDLIBC_STDINT_H_
 #define _STDLIBC_STDINT_H_
 
-#ifdef __GNUC__ 
+#define __NEED_INT8T
+#define __NEED_INT16T
+#define __NEED_INT32T
+#define __NEED_INT64T
 
-typedef __INT8_TYPE__ int8_t;
-typedef __INT16_TYPE__ int16_t;
-typedef __INT32_TYPE__ int32_t;
-typedef __INT64_TYPE__ int64_t;
+#define __NEED_UINT8T
+#define __NEED_UINT16T
+#define __NEED_UINT32T
+#define __NEED_UINT64T
 
-typedef __UINT8_TYPE__ uint8_t;
-typedef __UINT16_TYPE__ uint16_t;
-typedef __UINT32_TYPE__ uint32_t;
-typedef __UINT64_TYPE__ uint64_t;
+#define __NEED_INT_FAST8T
+#define __NEED_INT_FAST16T
+#define __NEED_INT_FAST32T
+#define __NEED_INT_FAST64T
 
-#endif
+#define __NEED_UINT_FAST8T
+#define __NEED_UINT_FAST16T
+#define __NEED_UINT_FAST32T
+#define __NEED_UINT_FAST64T
 
-#ifdef _MSC_BUILD
+#define __NEED_INT_LEAST8T
+#define __NEED_INT_LEAST16T
+#define __NEED_INT_LEAST32T
+#define __NEED_INT_LEAST64T
 
-typedef __int8 int8_t;
-typedef __int16 int16_t;
-typedef __int32 int32_t;
-typedef __int64 int64_t;
+#define __NEED_UINT_LEAST8T
+#define __NEED_UINT_LEAST16T
+#define __NEED_UINT_LEAST32T
+#define __NEED_UINT_LEAST64T
 
-typedef unsigned char uint8_t;
-typedef unsigned short uint16_t;
-typedef unsigned int uint32_t;
-typedef unsigned long long uint64_t;
+#define __NEED_INTMAXT
+#define __NEED_INTPTRT
 
-#endif
+#define __NEED_UINTMAXT
+#define __NEED_UINTPTRT
 
-typedef int8_t int_fast8_t;
-typedef int16_t int_fast16_t;
-typedef int32_t int_fast32_t;
-typedef int64_t int_fast64_t;
+#include "../bits/alltypes.h"
 
-typedef int8_t int_least8_t;
-typedef int16_t int_least16_t;
-typedef int32_t int_least32_t;
-typedef int64_t int_least64_t;
-
-typedef int64_t intmax_t;
-typedef int64_t intptr_t;
-
-typedef uint8_t uint_fast8_t;
-typedef uint16_t uint_fast16_t;
-typedef uint32_t uint_fast32_t;
-typedef uint64_t uint_fast64_t;
-
-typedef uint8_t uint_least8_t;
-typedef uint16_t uint_least16_t;
-typedef uint32_t uint_least32_t;
-typedef uint64_t uint_least64_t;
-
-typedef uint64_t uintmax_t;
-typedef uint64_t uintptr_t;
-
-#define INT8_WIDTH 8
+#define INT8_WIDTH  8
 #define INT16_WIDTH 16
 #define INT32_WIDTH 32
 #define INT64_WIDTH 64
 
-#define INT_FAST8_WIDTH 8
-#define INT_FAST16_WIDTH 16
-#define INT_FAST32_WIDTH 32
-#define INT_FAST64_WIDTH 64
+#define INT_FAST8_WIDTH  (sizeof(int_fast8_t) * 8)
+#define INT_FAST16_WIDTH (sizeof(int_fast16_t) * 8)
+#define INT_FAST32_WIDTH (sizeof(int_fast32_t) * 8)
+#define INT_FAST64_WIDTH (sizeof(int_fast64_t) * 8)
 
-#define INT_LEAST8_WIDTH 8
-#define INT_LEAST16_WIDTH 16
-#define INT_LEAST32_WIDTH 32
-#define INT_LEAST64_WIDTH 64
+#define INT_LEAST8_WIDTH  (sizeof(int_least8_t) * 8)
+#define INT_LEAST16_WIDTH (sizeof(int_least16_t) * 8)
+#define INT_LEAST32_WIDTH (sizeof(int_least32_t) * 8)
+#define INT_LEAST64_WIDTH (sizeof(int_least64_t) * 8)
 
-#define INTPTR_WIDTH 64
-#define INTMAX_WIDTH 64
+#define INTPTR_WIDTH (sizeof(intptr_t) * 8)
+#define INTMAX_WIDTH (sizeof(intmax_t) * 8)
 
 #define INT8_MIN (0 | 0xFF)
 #define INT16_MIN (0 | 0xFFFF)
@@ -109,23 +93,23 @@ typedef uint64_t uintptr_t;
 #define INTPTR_MAX (0 | 0x7FFFFFFFFFFFFFFF)
 #define INTMAX_MAX (0 | 0x7FFFFFFFFFFFFFFF)
 
-#define UINT8_WIDTH 8
+#define UINT8_WIDTH  8
 #define UINT16_WIDTH 16
 #define UINT32_WIDTH 32
 #define UINT64_WIDTH 64
 
-#define UINT_FAST8_WIDTH 8
-#define UINT_FAST16_WIDTH 16
-#define UINT_FAST32_WIDTH 32
-#define UINT_FAST64_WIDTH 64
+#define UINT_FAST8_WIDTH  (sizeof(uint_fast8_t) * 8)
+#define UINT_FAST16_WIDTH (sizeof(uint_fast16_t) * 8)
+#define UINT_FAST32_WIDTH (sizeof(uint_fast32_t) * 8)
+#define UINT_FAST64_WIDTH (sizeof(uint_fast64_t) * 8)
 
-#define UINT_LEAST8_WIDTH 8
-#define UINT_LEAST16_WIDTH 16
-#define UINT_LEAST32_WIDTH 32
-#define UINT_LEAST64_WIDTH 64
+#define UINT_LEAST8_WIDTH  (sizeof(uint_least8_t) * 8)
+#define UINT_LEAST16_WIDTH (sizeof(uint_least16_t) * 8)
+#define UINT_LEAST32_WIDTH (sizeof(uint_least32_t) * 8)
+#define UINT_LEAST64_WIDTH (sizeof(uint_least64_t) * 8)
 
-#define UINTPTR_WIDTH 64
-#define UINTMAX_WIDTH 64
+#define UINTPTR_WIDTH (sizeof(uintptr_t) * 8)
+#define UINTMAX_WIDTH (sizeof(uintmax_t) * 8)
 
 #define UINT8_MIN  0
 #define UINT16_MIN 0
@@ -173,8 +157,8 @@ typedef uint64_t uintptr_t;
 #define UINT8_C(c) c ## U
 #define UINT16_C(c) c ## U
 #define UINT32_C(c) c ## U
-#define UINT64_C(c) c ## UL
+#define UINT64_C(c) c ## ULL
 
-#define UINTMAX_C(c) c ## UL 
+#define UINTMAX_C(c) c ## ULL
 
 #endif
