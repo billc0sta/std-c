@@ -1,7 +1,7 @@
 #include "../include/math.h"
 #include "../include/fenv.h"
 #include "../include/stdint.h"
-#include "../include/limits.h"
+#include "../include/float.h"
 
 union __fprt __nan = {0x7FC00000}, __inf = {0x7F800000};
 
@@ -31,18 +31,16 @@ float fmodf(float x, float y) {
 }
 
 double fmod(double x, double y) {
-	return (double)(fmodl(x, y));
-}
-
-long double fmodl(long double x, long double y) {
 	if (isnan(x) || isnan(y))
 		return NAN;
 	if (!isfinite(x) || y == 0) {
 		feraiseexcept(FE_INVALID);
 		return NAN;
 	}
-	// -> TODO: fix
-	// return x % y;
+	return x - trunc(x / y) * y;
+}
+
+long double fmodl(long double x, long double y) {
 }
 
 float remainderf(float x, float y) {
@@ -138,28 +136,44 @@ long double fdiml(long double x, long double y) {
 
 float truncf(float arg) {
 	union {float f; int i;} u = {arg};
-	int exp = (u.i >> 24) & 0x7F8;
-	exp -= 127;
+	int exp = (u.i >> FLT_MANT_DIG) & FLT_MAX_EXP * 2 - 1;
+	exp -= FLT_MAX_EXP - 1;
 	if (exp < 1) return 0;
-	if (exp > 22) return arg;
-	u.i >>= 23 - exp;
-	u.i <<= 23 - exp;
-	return u.f; 
-}
-
-double trunc(double arg) {
-	union {float f; uint64_t i;} u = {arg};
-	int exp = (u.i >> 53) & 0x7FF;
-	exp -= 1023;
-	if (exp < 1) return 0;
-	if (exp > 51) return arg;
-	u.i >>= 52 - exp;
-	u.i <<= 52 - exp;
+	if (exp >= FLT_MANT_DIG - 1) return arg;
+	u.i >>= (FLT_MANT_DIG - 1) - exp;
+	u.i <<= (FLT_MANT_DIG - 1) - exp;
 	return u.f;
 }
 
-long double truncl(long double arg) {
-	// -> TODO: implement
+double trunc(double arg) {
+	union {double f; uint64_t i;} u = {arg};
+	int exp = (u.i >> DBL_MANT_DIG) & DBL_MAX_EXP * 2 - 1;
+	exp -= DBL_MAX_EXP - 1;
+	if (exp < 1) return 0;
+	if (exp >= DBL_MANT_DIG - 1) return arg;
+	u.i >>= (DBL_MANT_DIG - 1) - exp;
+	u.i <<= (DBL_MANT_DIG - 1) - exp;
+	return u.f;
 }
 
+// unportable
+#if LDBL_MAX_EXP == DBL_MAX_EXP
+long double truncl(long double arg) {
+	return (long double)(trunc(arg));
+} 
+#elif LDBL_MAX_EXP == 16384
+long double truncl(long double arg) {
+	union { struct { uint16_t se; uint64_t mts; } i; long double f;}
+	u = {arg};
+	int exp = u.i.se & LDBL_MAX_EXP * 2 - 1;
+	int s = u.i.se >> 15;
+	exp -= LDBL_MAX_EXP - 1;
+	if (exp < 1) return 0;
+	if (exp >= LDBL_MANT_DIG - 1) return arg;
+	u.i.mts >>= (LDBL_MANT_DIG - 1) - exp;
+	u.i.mts <<= (LDBL_MANT_DIG - 1) - exp;
+	return u.f;
+}
+#endif
+// 
 // -> TODO: Complete math.h 

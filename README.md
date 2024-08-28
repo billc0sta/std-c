@@ -5,6 +5,7 @@ this library is highly unportable, as it only adheres to these specifications
 - The NT kernel syscalls
 - little-endian byte order
 - IEEE 754 floating-point representation
+- 0x86 - 0x86_64 architectures
 
 this library supports the following compilers
 - MSVC Compiler
@@ -15,6 +16,7 @@ this library supports the following compilers
 - complex.h
 - ctype.h
 - fenv.h
+- float.h
 - math.h
 - stddef.h
 - stdlib.h

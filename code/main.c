@@ -1,5 +1,6 @@
 #include "include/math.h"
 #include <assert.h>
+#include <stdio.h>
 
 int main() {
 	union {unsigned u; float f;} prt = {.u = 1};
@@ -46,5 +47,11 @@ int main() {
 	assert(trunc(3.423) == 3.0);
 	assert(trunc(3123.423) == 3123.0);
 	assert(trunc(0) == 0);
+	assert(trunc(3.423L) == 3.0L);
+	assert(trunc(3123.423L) == 3123.0L);
+	assert(trunc(0) == 0);
 
+	double x = 543.0;
+	double y = 312.0;
+	printf("fmod(%f, %f): %f", x, y, fmod(x, y));
 }

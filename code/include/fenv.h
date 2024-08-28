@@ -1,6 +1,7 @@
 #ifndef _STDLIBC_FENV_H_
 #define _STDLIBC_FENV_H_
 
+// unportable, 0x86 - 0x86_64 archs
 #define FE_DIVBYZERO  1
 #define FE_INEXACT    2
 #define FE_INVALID    4
@@ -14,6 +15,8 @@
 #define FE_TOWARDZERO 3 
 #define FE_UPWARD     4
 typedef int fexcept_t;
+// 
+
 typedef struct {
 	fexcept_t __exceptions;
 	int __rounding;
@@ -22,6 +25,7 @@ typedef struct {
 
 extern fenv_t __pubfenv;
 extern fexcept_t __prev_exceptions;
+extern int __round; 
 
 int feclearexcept(int excepts);
 int fetestexcept(int excepts); 
@@ -32,5 +36,7 @@ int fegetenv(fenv_t* envp);
 int fesetenv(const fenv_t* envp);
 int feholdexcept(fenv_t* envp);
 int feupdateenv(const fenv_t* envp);
+int fesetround(int round);
+int fegetround();
 
 #endif 

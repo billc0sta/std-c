@@ -2,6 +2,7 @@
 
 fenv_t __pubfenv { .__exceptions = 0, .__rounding = FE_DOWNWARD, .__hold = 0 };
 fexcept_t __prev_exceptions;
+int __round; 
 
 int feclearexcept(int excepts) {
 	excepts = ~excepts;
@@ -57,4 +58,14 @@ int feupdateenv(const fenv_t* envp) {
 	__pubfenv.__hold       = 0;
 	__pubfenv.__exceptions |= __prev_exceptions;
 	return 0; 
+}
+
+int fesetround(int round) {
+	if (round < FE_DOWNWARD || round > FE_UPWARD)
+		return -1;
+	__round = round; 
+}
+
+int fegetround(int round) {
+	return __round; 
 }

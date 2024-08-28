@@ -59,6 +59,6 @@ double fdim(double x, double y);
 long double fdiml(long double x, long double y);
 float truncf(float arg);
 double trunc(double arg);
-double trunl(double arg);
+long double truncl(long double arg);
 
 #endif
