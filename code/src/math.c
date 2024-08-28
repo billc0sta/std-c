@@ -7,8 +7,9 @@ union __fprt __nan = {0x7FC00000}, __inf = {0x7F800000};
 
 int __isnrmlf(float arg) {
 	union {float f; int i;} u = {arg};
+	int exp = (u.i >> 23) & 0x7F8; 
 	int mts = (u.i & 0x7FFFFF);
-	return mts == 0 || mts >= 0x400000;
+	return (mts == 0 || mts >= 0x400000);
 }
 
 float fabsf(float arg) {

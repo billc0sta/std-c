@@ -20,7 +20,9 @@ this library supports the following compilers
 - math.h
 - stddef.h
 - stdlib.h
-- stdint.h 
+- stdint.h
+- stdalign.h
+- stdbool.h  
 - stdnoreturn.h
 - string.h
 - wchar.h
